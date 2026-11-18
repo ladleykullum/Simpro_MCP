@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /** `npm run login`: sign in to Simpro in the browser once and save the login for local use. */
-import { resolve } from "node:path";
-import { loadConfig, loadDotEnv } from "./config.js";
+import { join } from "node:path";
+import { loadConfig, loadDotEnv, PROJECT_ROOT } from "./config.js";
 import { FileTokenStore } from "./simpro/auth.js";
 import { browserLogin } from "./simpro/browserLogin.js";
 
-loadDotEnv(process.env.SIMPRO_ENV_FILE ?? resolve(".env"));
+loadDotEnv(process.env.SIMPRO_ENV_FILE ?? join(PROJECT_ROOT, ".env"));
 const cfg = loadConfig({ ...process.env, SIMPRO_TRANSPORT: "stdio", SIMPRO_AUTH_MODE: "authorization_code" });
 
 browserLogin({

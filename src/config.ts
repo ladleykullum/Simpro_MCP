@@ -1,5 +1,10 @@
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+/** The project folder (one level above dist/). Paths default to here, not to the
+ * current directory, because Claude Desktop starts the server from elsewhere. */
+export const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 /** How writes (POST/PUT/PATCH/DELETE) to Simpro are handled. */
 export type WriteMode =
@@ -116,7 +121,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     throw new Error(`SIMPRO_WRITE_MODE must be read_only, confirm or auto`);
   }
 
-  const stateDir = resolve(env.SIMPRO_STATE_DIR || (existsSync("/data") ? "/data" : "data"));
+  const stateDir = resolve(PROJECT_ROOT, env.SIMPRO_STATE_DIR || (existsSync("/data") ? "/data" : "data"));
 
   return {
     transport,
@@ -129,7 +134,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     tokenUrl: env.SIMPRO_TOKEN_URL || `${baseUrl}/oauth2/token`,
     authorizeUrl: env.SIMPRO_AUTH_URL || `${baseUrl}/oauth2/login`,
     redirectPort: int(env.SIMPRO_AUTH_REDIRECT_PORT, 8237),
-    tokenCachePath: resolve(env.SIMPRO_TOKEN_CACHE || ".simpro-tokens.json"),
+    tokenCachePath: resolve(PROJECT_ROOT, env.SIMPRO_TOKEN_CACHE || ".simpro-tokens.json"),
     writeMode,
     allowDelete: bool(env.SIMPRO_ALLOW_DELETE, false),
     secret: env.SIMPRO_SECRET || undefined,

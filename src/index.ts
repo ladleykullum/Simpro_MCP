@@ -4,9 +4,9 @@
  * Desktop; SIMPRO_TRANSPORT=http runs the hosted connector.
  * Never write to stdout here: in stdio mode it carries the MCP protocol.
  */
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { loadConfig, loadDotEnv, type Config } from "./config.js";
+import { loadConfig, loadDotEnv, PROJECT_ROOT, type Config } from "./config.js";
 import { createHttpApp } from "./http/app.js";
 import { WriteGuard } from "./safety.js";
 import {
@@ -55,7 +55,7 @@ async function runHttp(cfg: Config): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  loadDotEnv(process.env.SIMPRO_ENV_FILE ?? resolve(".env"));
+  loadDotEnv(process.env.SIMPRO_ENV_FILE ?? join(PROJECT_ROOT, ".env"));
   const cfg = loadConfig();
   if (cfg.transport === "http") await runHttp(cfg);
   else await runStdio(cfg);
