@@ -9,25 +9,10 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { loadConfig, loadDotEnv, PROJECT_ROOT, type Config } from "./config.js";
 import { createHttpApp } from "./http/app.js";
 import { WriteGuard } from "./safety.js";
-import {
-  ClientCredentialsProvider,
-  FileTokenStore,
-  RefreshTokenProvider,
-  StaticToken,
-} from "./simpro/auth.js";
-import { browserLogin } from "./simpro/browserLogin.js";
-import { SimproClient, type TokenProvider } from "./simpro/client.js";
+import { SimproClient } from "./simpro/client.js";
+import { localTokenProvider } from "./simpro/local.js";
 import { sharedLimiter } from "./simpro/rateLimiter.js";
 import { buildServer, VERSION } from "./server.js";
-
-export function localTokenProvider(cfg: Config): TokenProvider {
-  if (cfg.authMode === "api_key") return new StaticToken(cfg.apiKey!);
-  const app = { tokenUrl: cfg.tokenUrl, clientId: cfg.clientId!, clientSecret: cfg.clientSecret! };
-  if (cfg.authMode === "client_credentials") return new ClientCredentialsProvider(app);
-  return new RefreshTokenProvider(app, new FileTokenStore(cfg.tokenCachePath), () =>
-    browserLogin({ ...app, authorizeUrl: cfg.authorizeUrl, port: cfg.redirectPort }),
-  );
-}
 
 async function runStdio(cfg: Config): Promise<void> {
   const client = new SimproClient({
