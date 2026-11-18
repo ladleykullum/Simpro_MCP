@@ -8,6 +8,7 @@ MCP server for one business's Simpro account. TypeScript, Node 20+, official MCP
 - `npm test`: compile with `tsconfig.test.json`, then run `node --test`. Everything runs against the simulated Simpro in `src/mock/`. No network is needed.
 - `npm run mock`: run the simulated Simpro on :4010 (API key `mock-key`; OAuth client `mock-client` / `mock-secret`).
 - `npm run login`: local browser sign-in that saves a refresh token.
+- `npm run check`: read-only run of every lookup tool against the account in `.env`, for the first live run (`src/liveCheck.ts`).
 
 ## Layout
 
@@ -39,4 +40,4 @@ MCP server for one business's Simpro account. TypeScript, Node 20+, official MCP
 - Job stages: Pending, Progress, Complete, Invoiced, Archived. Quote stages: InProgress, Complete, Approved, Archived.
 - Rate limit is about 10 requests per second per integration. Simpro sends no Retry-After header, so the client backs off with jitter.
 
-None of this has been verified on a live build from this repo yet. See the checklist in README.md.
+None of this has been verified on a live build from this repo yet. Run `npm run check` and see the checklist in README.md.

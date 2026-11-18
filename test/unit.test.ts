@@ -43,6 +43,8 @@ test("query helpers", () => {
   assert.equal(dateFilter(), undefined);
   assert.equal(wildcard(" smith "), "%smith%");
   assert.equal(wildcard("  "), undefined);
+  assert.equal(wildcard("%"), undefined);
+  assert.equal(wildcard("50%"), "%50%");
 });
 
 test("htmlToText and clean", () => {

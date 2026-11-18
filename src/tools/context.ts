@@ -89,8 +89,8 @@ export function dateFilter(from?: string, to?: string): string | undefined {
 
 /** Simpro has no free-text search; match with a wildcard on one column. */
 export function wildcard(text?: string): string | undefined {
-  const t = text?.trim();
-  return t ? `%${t.replace(/%/g, "")}%` : undefined;
+  const t = text?.replace(/%/g, "").trim();
+  return t ? `%${t}%` : undefined;
 }
 
 export function listQuery(

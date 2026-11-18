@@ -107,14 +107,26 @@ Then point a second copy at it: set `SIMPRO_BASE_URL=http://127.0.0.1:4010` and 
 
 ## Project status
 
-The server is fully tested against the **simulated** Simpro (`npm test`). It has **not yet been run against a real Simpro build.** Field names and filters follow Simpro's API, but check these on the first real run:
+The server is fully tested against the **simulated** Simpro (`npm test`). It has **not yet been run against a real Simpro build.**
+
+### First run against a real account
+
+After filling in `.env` (and `npm run login` if you use OAuth), run:
+
+```bash
+npm run check
+```
+
+It runs every lookup tool once and prints ✓ or ✗ for each, plus notes on what Simpro returned, such as which cost fields a job has and whether invoices report a remaining balance. **It only reads and never changes anything**, even if `.env` allows writes.
+
+Field names and filters follow Simpro's API. Use the check output to confirm these:
 
 - [ ] Signing in (local `npm run login` and the hosted connector)
 - [ ] `find_jobs`, `find_quotes`, `find_invoices` filters (stage, dates, `IsPaid`, `DueDate`)
 - [ ] `job_financials`: which cost and margin fields the build returns in `Totals`
 - [ ] `aged_receivables`: whether invoices report a remaining balance (part-payments)
 - [ ] `find_schedule` date and staff filters
-- [ ] `add_note` on a test job
+- [ ] `add_note` on a test job (not covered by `npm run check`, which never writes)
 
 ## Development
 
@@ -125,5 +137,14 @@ npm run build
 ```bash
 npm test
 ```
+
+The 73 tests run against a simulated Simpro (`src/mock/`), with no network and no account needed. They cover:
+
+- every tool;
+- the approval step for changes, including approvals that can't be reused or transferred;
+- local browser sign-in, refreshing and saving the login;
+- the hosted connector's full OAuth flow, including forged, tampered and expired tokens, cross-user attempts, restarts, and refused logins;
+- rate limiting, retries and paging;
+- bad input, oversized results and locked records.
 
 The code lives in `src/`: `simpro/` holds the API client and sign-in, `tools/` holds one file per area, `http/` holds hosted mode, and `mock/` holds the simulated Simpro. See `CLAUDE.md` for Simpro API quirks.

@@ -14,6 +14,16 @@ export interface MockOptions {
   apiKey?: string;
   /** Answer the first N requests with 429, to test back-off. */
   rateLimitFirst?: number;
+  /** Simulate a Simpro login that doesn't send `state` back. */
+  dropState?: boolean;
+  /** Simulate the user refusing access on the Simpro login page. */
+  loginError?: string;
+  /** Extra generated jobs, to test paging over many pages. */
+  extraJobs?: number;
+  /** Refresh tokens issued by the token endpoint are single-use (rotation). */
+  rotateRefreshTokens?: boolean;
+  /** Writes to these paths fail as if someone has the record open in Simpro. */
+  lockedPaths?: string[];
 }
 
 export interface MockSimpro {
@@ -78,12 +88,18 @@ export function startMockSimpro(opts: MockOptions = {}, port = 0): Promise<MockS
   const apiKey = opts.apiKey ?? "mock-key";
   const issued = new Set<string>([apiKey]);
   const codes = new Map<string, string>();
+  const revoked = new Set<string>();
+  const issuedRefresh = new Set<string>();
   let rateLimited = opts.rateLimitFirst ?? 0;
   const requests: MockSimpro["requests"] = [];
   let nextId = 9000;
 
+  const jobs = [...data.jobs];
+  for (let i = 0; i < (opts.extraJobs ?? 0); i++) {
+    jobs.push({ ID: 10_000 + i, Name: `Generated job ${i}`, Stage: "Archived", DateIssued: "2020-01-01" });
+  }
   const collections: Record<string, Row[]> = {
-    jobs: data.jobs,
+    jobs,
     quotes: data.quotes,
     invoices: data.invoices,
     schedules: data.schedules,
@@ -136,11 +152,17 @@ export function startMockSimpro(opts: MockOptions = {}, port = 0): Promise<MockS
     // ----- OAuth -----
     if (url.pathname === "/oauth2/login") {
       // Simulates the user signing in and approving straight away.
+      const back = new URL(q.redirect_uri);
+      if (opts.loginError) {
+        back.searchParams.set("error", opts.loginError);
+        if (q.state && !opts.dropState) back.searchParams.set("state", q.state);
+        res.writeHead(302, { Location: back.toString() }).end();
+        return;
+      }
       const code = `code-${Math.random().toString(36).slice(2)}`;
       codes.set(code, q.redirect_uri ?? "");
-      const back = new URL(q.redirect_uri);
       back.searchParams.set("code", code);
-      if (q.state) back.searchParams.set("state", q.state);
+      if (q.state && !opts.dropState) back.searchParams.set("state", q.state);
       res.writeHead(302, { Location: back.toString() }).end();
       return;
     }
@@ -148,20 +170,33 @@ export function startMockSimpro(opts: MockOptions = {}, port = 0): Promise<MockS
       const b = (body ?? {}) as Record<string, string>;
       if (b.client_id !== "mock-client" || b.client_secret !== "mock-secret") return send(res, 401, { error: "invalid_client" });
       if (b.grant_type === "authorization_code" && !codes.delete(b.code)) return send(res, 400, { error: "invalid_grant" });
-      if (b.grant_type === "refresh_token" && !String(b.refresh_token).startsWith("mock-refresh-")) {
-        return send(res, 400, { error: "invalid_grant" });
+      if (b.grant_type === "refresh_token") {
+        if (!issuedRefresh.has(b.refresh_token) || revoked.has(b.refresh_token)) {
+          return send(res, 400, { error: "invalid_grant" });
+        }
+        if (opts.rotateRefreshTokens) revoked.add(b.refresh_token);
       }
       const access = `mock-access-${Math.random().toString(36).slice(2)}`;
       issued.add(access);
+      let refresh: string | undefined;
+      if (b.grant_type !== "client_credentials") {
+        refresh = `mock-refresh-${Math.random().toString(36).slice(2)}`;
+        issuedRefresh.add(refresh);
+      }
       return send(res, 200, {
         access_token: access,
         token_type: "Bearer",
         expires_in: 3600,
-        ...(b.grant_type !== "client_credentials" ? { refresh_token: `mock-refresh-${Math.random().toString(36).slice(2)}` } : {}),
+        ...(refresh ? { refresh_token: refresh } : {}),
       });
     }
 
     // ----- API -----
+    if (url.pathname === "/api/v1.0/currentUser/") {
+      const token = (req.headers.authorization ?? "").replace(/^Bearer /, "");
+      if (!issued.has(token)) return send(res, 401, { message: "Invalid token" });
+      return send(res, 200, { ID: 1, Name: "Mere Thompson", Type: "employee" });
+    }
     const m = /^\/api\/v1\.0\/companies\/0\/(.*)$/.exec(url.pathname);
     if (!m) return send(res, 404, { errors: [{ message: "Invalid route" }] });
     const path = m[1];
@@ -173,6 +208,9 @@ export function startMockSimpro(opts: MockOptions = {}, port = 0): Promise<MockS
     }
     const token = (req.headers.authorization ?? "").replace(/^Bearer /, "");
     if (!issued.has(token)) return send(res, 401, { message: "Invalid token" });
+    if (req.method !== "GET" && opts.lockedPaths?.includes(path)) {
+      return send(res, 422, { errors: [{ path: "/", message: "This quote is currently locked by Sam Lee", value: null }] });
+    }
 
     // notes (read + create)
     const notesMatch = /^(jobs|quotes)\/(\d+)\/notes\/$/.exec(path);
