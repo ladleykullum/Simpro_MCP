@@ -54,7 +54,9 @@ A legacy Simpro **API key** also works for local use.
 
 ## 2. Local use with Claude Desktop
 
-You need Node.js 20 or newer.
+**Not a developer?** Follow the step-by-step guide for Windows and Mac: **[docs/INSTALL.md](docs/INSTALL.md)**.
+
+You need Node.js 20 or newer. The server reads `.env` and saves its login inside the project folder, wherever it is started from.
 
 ```bash
 git clone https://github.com/ladleykullum/Simpro_MCP.git
@@ -81,8 +83,7 @@ Then add the server to Claude Desktop (**Settings → Developer → Edit Config*
   "mcpServers": {
     "simpro": {
       "command": "node",
-      "args": ["/full/path/to/Simpro_MCP/dist/index.js"],
-      "env": { "SIMPRO_ENV_FILE": "/full/path/to/Simpro_MCP/.env" }
+      "args": ["/full/path/to/Simpro_MCP/dist/index.js"]
     }
   }
 }
