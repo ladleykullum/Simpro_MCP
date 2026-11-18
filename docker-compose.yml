@@ -1,0 +1,16 @@
+# Hosted mode. Put the settings in a .env file next to this (never commit it),
+# and run behind an HTTPS reverse proxy (Caddy, Nginx, Cloudflare Tunnel, or your host's).
+services:
+  simpro-mcp:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      SIMPRO_TRANSPORT: http
+    ports:
+      - "127.0.0.1:3000:3000"   # only the reverse proxy on this machine can reach it
+    volumes:
+      - simpro-state:/data      # secret key, connector registrations, audit log
+
+volumes:
+  simpro-state:
