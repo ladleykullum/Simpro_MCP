@@ -9,7 +9,19 @@ This guide sets up Claude on your computer so you can ask it about your Simpro j
 - A Windows or Mac computer you can install programs on.
 - A Claude account (a paid plan works best).
 - Admin access to Simpro, or someone who has it, for Step 4.
+- Your company's Simpro web address (see below).
 - The invite to the GitHub project.
+
+### Simpro in the browser or the mobile app: does it matter?
+
+No. The assistant doesn't use the Simpro website or the Simpro app. It connects straight to your company's Simpro account, which is the same data either way. Keep using Simpro however you like. Changes made through Claude show up in both, and anything entered in either is visible to Claude.
+
+You do need two things from the browser side:
+
+- **Your Simpro web address**, for example `https://yourcompany.simprosuite.com`. If you only use the mobile app, it's the company address the app asked for when you first logged in. Your office admin will also know it.
+- **The browser version of Simpro for Step 4.** The screen where the sign-in app is created (**Setup → Integrations → API**) isn't in the mobile app, and it needs an admin login.
+
+> **If your company runs Simpro on its own server** (rare: most businesses use Simpro's cloud), your address won't end in `simprosuite.com`. Use whatever address you normally log in at. This computer must be able to reach that server, for example while in the office or on the company VPN. Otherwise the steps are the same.
 
 ---
 
@@ -64,7 +76,7 @@ This lets the assistant sign in to Simpro as you. It needs a Simpro admin.
    - **Client ID**
    - **Client secret** (treat it like a password)
 5. Also note:
-   - **Your Simpro address:** what you type to log in, for example `https://yourcompany.simprosuite.com`. Note only the part up to `.com`.
+   - **Your Simpro address:** what you type to log in, for example `https://yourcompany.simprosuite.com`. Note only the start of the address, up to `.com` (or the end of the server name if your company hosts Simpro itself). Leave off anything after it, such as `/staff/...`.
    - **Company ID:** almost always `0`.
 
 ## Step 5: Build the project
@@ -203,6 +215,7 @@ Ask something like:
 | The Simpro login page shows an error about the redirect | The Redirect URI in Simpro must be exactly `http://localhost:8237/callback`. |
 | "Not signed in" or "HTTP 401" | Run `npm run login` again (Step 7). |
 | "HTTP 403" | Your Simpro user doesn't have permission for that area. Ask your Simpro admin. |
+| "fetch failed", "ENOTFOUND" or timeouts | The computer can't reach Simpro. Check the address in `.env` (Step 6). If your company hosts Simpro itself, connect to the office network or VPN first. |
 | "currently locked by …" | Someone has that job or quote open in Simpro. Ask them to close it, then try again. |
 
 Claude Desktop's server logs are under **Settings → Developer**. Send them to whoever set this up if you're stuck. Don't send your `.env` file.
